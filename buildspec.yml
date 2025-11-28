@@ -1,47 +1,40 @@
 version: 0.2
-# SRE-compliant build specification
+
 env:
   variables:
-    NODE_VERSION: "22.9.0"
-    BUILD_TIMEOUT: "300"
+    NODE_ENV: production
+  secrets-manager:
+    DB_PASSWORD: "my-app/db-password:password"
+
 phases:
   install:
     runtime-versions:
-      nodejs: 22.9.0
+      nodejs: 18
     commands:
-      - echo "[$(date)] Installing build dependencies"
-      - npm install -g npm@latest
+      - echo "Installing dependencies..."
+      - npm install
+
   pre_build:
     commands:
-      - echo "[$(date)] Pre-build validation started"
-      - node --version && npm --version
-      - echo "[$(date)] Installing application dependencies"
-      - npm install
+      - echo "Running tests..."
+      - npm test
+
   build:
     commands:
-      - echo "[$(date)] Build phase started"
-      - echo "[$(date)] Running code quality checks"
-      - npm run lint || (echo "Linting failed" && exit 1)
-      - echo "[$(date)] Running unit tests"
-      - npm test || (echo "Tests failed" && exit 1)
-      - echo "[$(date)] Building application"
-      - npm run build 2>/dev/null || echo "No build script - using source files"
-      - echo "[$(date)] Creating deployment artifacts"
-      - zip -r deployment-package.zip . -x "node_modules/*" "*.git*" "*.zip" "coverage/*"
+      - echo "Building application..."
+      - npm run build
+
   post_build:
     commands:
-      - echo "[$(date)] Post-build phase completed"
-      - echo "Build artifacts ready for deployment"
-      - ls -la deployment-package.zip
+      - echo "Packaging build artifacts..."
+      - zip -r app.zip dist/
+
 artifacts:
   files:
-    - '**/*'
-  name: build-$(date +%Y%m%d-%H%M%S)
+    - app.zip
+    - build/**/*
+  discard-paths: yes
+
 cache:
   paths:
-    - 'node_modules/**/*'
-reports:
-  test-results:
-    files:
-      - 'test-results.xml'
-    file-format: 'JUNITXML'
+    - node_modules/**/* 
