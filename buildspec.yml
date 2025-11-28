@@ -2,12 +2,12 @@ version: 0.2
 # SRE-compliant build specification
 env:
   variables:
-    NODE_VERSION: "18"
+    NODE_VERSION: "22.9.0"
     BUILD_TIMEOUT: "300"
 phases:
   install:
     runtime-versions:
-      nodejs: 18
+      nodejs: 22.9.0
     commands:
       - echo "[$(date)] Installing build dependencies"
       - npm install -g npm@latest
@@ -16,7 +16,7 @@ phases:
       - echo "[$(date)] Pre-build validation started"
       - node --version && npm --version
       - echo "[$(date)] Installing application dependencies"
-      - npm ci --only=production
+      - npm install
   build:
     commands:
       - echo "[$(date)] Build phase started"
@@ -33,15 +33,15 @@ phases:
       - echo "[$(date)] Post-build phase completed"
       - echo "Build artifacts ready for deployment"
       - ls -la deployment-package.zip
-  artifacts:
+artifacts:
+  files:
+    - '**/*'
+  name: build-$(date +%Y%m%d-%H%M%S)
+cache:
+  paths:
+    - 'node_modules/**/*'
+reports:
+  test-results:
     files:
-      - '**/*'
-    name: build-$(date +%Y%m%d-%H%M%S)
-  cache:
-    paths:
-      - 'node_modules/**/*'
-  reports:
-    test-results:
-      files:
-        - 'test-results.xml'
-      file-format: 'JUNITXML'
+      - 'test-results.xml'
+    file-format: 'JUNITXML'
